@@ -1,0 +1,489 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}\usepackage{times}
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm]{geometry}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}\usepackage{array}\usepackage{enumitem}\usepackage{tabularx}
+\usepackage{caption}\usepackage{fancyhdr}\usepackage{parskip}\usepackage{float}
+\usepackage{setspace}\onehalfspacing
+\usepackage{amsmath}
+\usepackage{xurl}\usepackage[hidelinks]{hyperref}
+\captionsetup{font=small,labelfont=bf,labelsep=colon,
+              justification=justified,singlelinecheck=false}
+\setlist[itemize]{leftmargin=1.3em,itemsep=0pt,parsep=0pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0pt,parsep=0pt,topsep=2pt}
+\setlength{\parskip}{4pt plus 1pt}
+\renewcommand{\topfraction}{0.85}\renewcommand{\bottomfraction}{0.7}\renewcommand{\textfraction}{0.1}\renewcommand{\floatpagefraction}{0.75}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\footnotesize KOUAME Koffi Fid\`ele}
+\fancyhead[C]{\footnotesize VIDEO GAME MARKET ANALYTICS}
+\fancyhead[R]{\footnotesize Data Analysis Internship}
+\fancyfoot[C]{\thepage}\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{15pt}
+\newcommand{\fig}[3][0.92]{\begin{figure}[H]\centering\includegraphics[width=#1\linewidth]{#2}\caption{#3}\end{figure}}
+\newcommand{\capture}[2]{\IfFileExists{figures/#1}{\begin{figure}[H]\centering\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.4pt}%
+\fbox{\includegraphics[width=\dimexpr\linewidth-0.8pt\relax]{#1}}\caption{#2}\end{figure}}{}}
+
+\begin{document}
+
+\begin{titlepage}\centering
+\singlespacing
+\vspace*{3cm}
+{\large\scshape Data Analysis Internship}\\[0.4cm]
+{\normalsize Task 11}\\[2.0cm]
+\rule{\linewidth}{0.5pt}\\[0.8cm]
+{\LARGE\bfseries Video Game Industry Analysis}\\[0.6cm]
+{\large What Sells in the Video Game Market?\\ Genres, Platforms, Publishers, Regions and Ratings\\ of 16{,}715 Releases (1980--2016)}\\[0.8cm]
+\rule{\linewidth}{0.5pt}\\[1.2cm]
+{\normalsize Data Quality $\bullet$ Cleaning $\bullet$ Exploratory Analysis $\bullet$ Statistical Tests
+$\bullet$ Power BI Dashboard $\bullet$ Recommendations}\\[3.0cm]
+{\large\itshape Prepared by}\\[0.5cm]
+{\Large\bfseries KOUAME Koffi Fid\`ele}\\[0.6cm]
+{\large 5 October 2026}
+\vfill\end{titlepage}
+
+\singlespacing
+\tableofcontents\newpage
+\onehalfspacing
+
+% =====================================================================
+\section{Executive summary}
+
+A company of the gaming industry wants to understand the video game market. This report
+analyses a dataset of game sales to answer seven questions: which genres are the most
+common, which platforms and publishers sell the most, which games are the best sellers,
+how sales have changed over time, which regions buy, and whether ratings go with sales.
+The notebook \texttt{Video-Game-Analytics.ipynb} reproduces every number and figure; the
+cleaned dataset is in \texttt{data/processed/}, and the Power BI dashboard in
+\texttt{powerbi/}.
+
+\textbf{Data.} The main file lists \textbf{16{,}719 releases} (one game on one platform) on
+31 platforms from 1980 to 2016, with sales in four regions, critic and user scores and the
+ESRB age rating (VGChartz sales, Metacritic scores, extraction of 22 December 2016). Two
+additional files give a later snapshot of the PS4 and Xbox One catalogues. Sales are
+\textbf{millions of units}, not dollars. After cleaning, \textbf{16{,}715 releases of
+11{,}563 games} remain, with 99.97\% of the units.
+
+\textbf{Key figures.} \textbf{8{,}918 million units} sold. \textbf{Action} is both the most
+common and the best-selling genre, the \textbf{PlayStation~2} the best-selling platform
+and \textbf{Nintendo} the leading publisher. The typical release sells 170{,}000 copies;
+only 12.4\% pass one million.
+
+\textbf{Main findings.}
+\begin{itemize}
+\item \textbf{A hit-driven market}: 6.6\% of the releases make half of all units.
+\item \textbf{Frequency is not performance}: Action is the most common genre, but
+Platform and Shooter games sell the most per release; Adventure is crowded with small sellers.
+\item \textbf{Nintendo} sells 20\% of all units with 2.5 million per release; the ten
+largest publishers hold 70\% of the market.
+\item \textbf{Retail sales peaked in 2008} (672 million units) and then fell by 60\%, as
+digital and mobile games, which are not tracked, grew.
+\item \textbf{North America buys half of the units}; Europe has risen to the first rank
+for 2016 releases; Japan is a distinct market that prefers role-playing games.
+\item \textbf{Critic scores go with sales} (Spearman $\rho = 0.39$), \textbf{user scores
+much less} ($\rho = 0.15$); the median release scored 90+ sells 13 times more than one
+scored below 50.
+\item \textbf{Games sell for years}: the same PS4 and Xbox One games sold 29\% more after
+December 2016.
+\end{itemize}
+
+\textbf{Dashboard.} The findings are delivered in an eight-page interactive Power BI dashboard
+(Section~\ref{sec:dash}, Figure~\ref{fig:p1}): an overview with the KPI cards required by the brief,
+one page per group of questions, an update on the PS4 and Xbox One generation, the insights and
+an auditable data-quality page.
+
+% =====================================================================
+\section{Data understanding}
+
+\subsection{The three files}
+
+\begin{table}[H]\centering\small
+\caption{Supplied files.}
+\begin{tabularx}{\linewidth}{@{}lXr@{}}
+\toprule
+File & Content & Rows\\\midrule
+\texttt{Video\_Games\_Sales\_as\_at\_22\_Dec\_2016.csv} & main file: one row per release; name, platform, year, genre, publisher, sales in NA, EU, JP, other regions and global, critic score and count, user score and count, developer, ESRB rating & 16{,}719\\
+\texttt{PS4\_GamesSales.csv} & later VGChartz snapshot of PS4 games: game, year, genre, publisher, sales by region & 1{,}034\\
+\texttt{XboxOne\_GameSales.csv} & same for Xbox One (plus a rank column) & 613\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Two notions must be kept apart: a \textbf{release} is a game on one platform (one row,
+16{,}715 after cleaning) and a \textbf{game} is a title, all platforms together (11{,}563).
+\emph{Grand Theft Auto V}, for example, is one game with five releases.
+
+\subsection{Columns, meaning and types}
+
+\begin{table}[H]\centering\small
+\caption{Columns of the main file, with the type read by pandas and the missing values.}
+\begin{tabularx}{\linewidth}{@{}lXllr@{}}
+\toprule
+Column & Meaning & Read as & Correct type & Missing\\\midrule
+Name & title of the game & text & text & 2\\
+Platform & console or system code (PS2, X360, Wii, PC...) & text & text & 0\\
+Year\_of\_Release & year of release on that platform & decimal & integer & 269\\
+Genre & 12 genres & text & text & 2\\
+Publisher & company that published the release & text & text & 54\\
+NA/EU/JP/Other\_Sales & units sold by region (millions) & decimal & decimal & 0\\
+Global\_Sales & units sold worldwide (millions) & decimal & decimal & 0\\
+Critic\_Score & Metacritic press score (0--100) & decimal & decimal & 8{,}582\\
+Critic\_Count & number of critics & decimal & integer & 8{,}582\\
+User\_Score & Metacritic player score (0--10) & decimal & decimal & 9{,}129\\
+User\_Count & number of players & decimal & integer & 9{,}129\\
+Developer & studio & text & text & 6{,}623\\
+Rating & ESRB age rating & text & text & 6{,}769\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Sales are extremely skewed: median 0.17, mean 0.53 and maximum 82.5 million units
+(\emph{Wii Sports}). Critic and user scores exist for less than half of the releases,
+almost none before 1996: this is a coverage limit of Metacritic, not an error to correct.
+
+% =====================================================================
+\section{Data quality and cleaning}
+
+\subsection{Issues found}
+
+\begin{table}[H]\centering\small
+\caption{Data quality audit and treatment.}
+\begin{tabularx}{\linewidth}{@{}Xrl@{}}
+\toprule
+Issue & Rows & Treatment\\\midrule
+No name and no genre (Genesis, 1993) & 2 & removed (2.42 M units)\\
+Split record of one release: \emph{Madden NFL 13} (PS3), \emph{Sonic the Hedgehog} (PS3) & 2 & merged (sales added)\\
+Two different games with one name: \emph{Need for Speed: Most Wanted} 2005 and 2012 & 2 pairs & kept, 2012 releases renamed\\
+Year after the extraction date (2017, 2020) & 4 & year set to missing\\
+Missing year & 269 & kept, \emph{Unknown}, out of time series\\
+Missing publisher & 54 & \emph{Unknown}\\
+Legacy ESRB code K-A (= E before 1998), pending code RP & 3 + 3 & K-A $\to$ E; RP and blank $\to$ \emph{Not rated}\\
+Years and counts stored as decimals & 3 columns & integers\\
+Exact duplicates; negative or zero sales & 0 & none found\\
+Console files: Mac Roman encoding, carriage-return line breaks, non-breaking spaces, 512 zero-sales rows (announced games) & 1{,}647 & decoded, trimmed, zero-sales rows removed\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The duplicate check shows why a mechanical rule is not enough: three name-platform pairs
+appear twice, but two of them are fragments of one release (same critic score, tiny or
+partial sales, missing year) and must be merged, while the third is a 2012 reboot of a
+2005 game and must be kept. The 2020 release of \emph{Imagine: Makeup Artist} on DS, a
+console discontinued in 2013, is a typing error: its year is set to missing rather than
+guessed. The console files, read with default settings, appear empty, because they use
+the old Mac line breaks; they are decoded with the Mac Roman encoding (byte 142 =
+\emph{é}).
+
+\subsection{Cleaned dataset}
+
+Every step is recorded in a cleaning log (\texttt{data/processed/cleaning\_log.csv}),
+also shown in the dashboard: \textbf{16{,}719 rows $\to$ 16{,}715 releases}, units
+8{,}920.30 $\to$ \textbf{8{,}917.88 million (99.97\%)}. The cleaned dataset
+\texttt{video\_games\_clean.csv} has 25 columns: the original ones, plus platform name,
+manufacturer (Sony, Nintendo, Microsoft, Sega, PC, Other) and type (home console,
+handheld, PC), decade, user score $\times$10 (same scale as the critic score), critic
+score band and sales tier. Three companion tables feed the dashboard: the regional sales
+in long format (66{,}860 rows), the cleaned console files (1{,}135 releases with sales)
+and the cleaning log.
+
+% =====================================================================
+\section{Key performance indicators}
+
+\begin{table}[H]\centering\small
+\caption{KPIs of the dashboard (no filter).}
+\begin{tabularx}{\linewidth}{@{}lrX@{}}
+\toprule
+KPI & Value & Comment\\\midrule
+Total games & 11{,}563 & distinct titles\\
+Total releases & 16{,}715 & game $\times$ platform\\
+Total sales & 8{,}917.9 M units & 1980--2016\\
+Top genre & Action & also the most common (3{,}370 releases)\\
+Top platform & PlayStation 2 & 1{,}256 M units\\
+Top publisher & Nintendo & 1{,}789 M units\\
+Average / median sales per release & 0.53 / 0.17 M & skewed by blockbusters\\
+Releases above 1 M units & 12.4\% & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =====================================================================
+\section{Exploratory analysis}
+
+\subsection{Which genres are the most common? (Q1)}
+\fig{fig01_genres}{Releases per genre (left) and units per release (right; grey: mean, blue: median).}
+\textbf{Action is the most common genre} (3{,}370 releases, 20\%), ahead of Sports (14\%)
+and Misc (10\%). Frequency and performance differ: \textbf{Platform} games are only the 8th
+most common genre but sell the most per release (mean 0.93 M, median 0.27 M), followed by
+\textbf{Shooter} (0.80 M). \textbf{Adventure} is the 6th most common genre but the weakest
+seller (median 0.05 M); Strategy and Puzzle are similar. In every genre the median is
+three to four times below the mean: each genre lives on a few hits.
+
+\subsection{Which platforms have the highest sales? (Q2)}
+\fig{fig02_platforms}{Global sales of the 15 best-selling platforms, coloured by manufacturer.}
+The \textbf{PlayStation 2} leads (1{,}256 M units, 14.1\%), ahead of the Xbox 360 (972 M),
+PS3 (939 M), Wii (908 M) and DS (807 M), all consoles of the 2000s, the peak of retail
+sales. By manufacturer, \textbf{Sony (40\%) and Nintendo (39\%)} share four fifths of the
+market, Microsoft 16\%. The PS4, launched in 2013, already ranks 8th: it leads the most
+recent period.
+
+\subsection{Which publishers have the highest total sales? (Q3)}
+\fig{fig03_publishers}{Global sales of the 12 largest publishers, with their number of releases and units per release.}
+\textbf{Nintendo} leads with 1{,}789 M units (20\%), followed by Electronic Arts (1{,}117 M),
+Activision (731 M), Sony Computer Entertainment (606 M) and Ubisoft (472 M). Two models
+appear: Nintendo publishes few releases (706) that sell 2.53 M each, five times the
+average, on its own consoles; EA publishes almost twice as many (1{,}355) at 0.82 M each,
+with annual franchises on every platform. The market is concentrated: the 10 largest of
+581 publishers hold \textbf{70\%} of the units.
+
+\subsection{What are the best-selling games? (Q4)}
+\fig{fig04_best_sellers}{Ten best-selling releases (left) and ten best-selling games, all platforms together (right).}
+\textbf{Wii Sports} (82.5 M) is by far the best-selling release, and the ten best-selling
+releases are all Nintendo games on Nintendo hardware, several of them bundled with the
+console. Summing the platforms of each title changes the ranking: \textbf{Grand Theft Auto~V}
+becomes the second best-selling game (56.6 M on 5 platforms), and two \emph{Call of Duty}
+episodes (about 31 M each) enter the top~10. For a third-party publisher, the route to the
+top is the multi-platform blockbuster.
+
+\subsection{How have game sales changed over the years? (Q5)}
+\fig{fig05_sales_over_years}{Units sold (top) and releases (bottom) per year of release.}
+The market went through three phases: a small market until 1995 (under 100 M units a year);
+fast growth from 1996 to the \textbf{peak of 2008} (672 M units, 1{,}427 releases); then a
+decline of tracked retail sales, to 268 M units in 2015 ($-60\%$). Releases and units fell
+at the same pace, so each release sells about as much as before. The decline concerns
+\emph{retail units}: digital downloads, mobile and free-to-play games are not tracked, and
+2016 is incomplete.
+\fig[0.92]{fig06_manufacturers_over_years}{Units sold per year by platform manufacturer.}
+Sales follow \textbf{console generations} of six to eight years: Sony leads with the
+PlayStation and PS2, Nintendo peaks with the Wii and DS (2006--2010), Microsoft grows
+with the Xbox 360; Sega leaves hardware after 2001.
+
+\subsection{Which regions generate the highest sales? (Q6)}
+\fig{fig07_regions}{Share of units by region: all years (left) and per year (right).}
+\textbf{North America generates half of all units} (49.4\%), ahead of Europe (27.2\%),
+Japan (14.6\%) and the rest of the world (8.9\%). Japan weighed 27--29\% in the 1980s and
+1990s but 10--15\% since 2005; Europe rose from 8\% (1980s) to 33\% (2010s) and is the
+first region for 2016 releases (39\% vs 35\%).
+\fig[0.9]{fig08_genre_by_region}{Share of each region's units by genre (each column adds up to 100\%); the red frames mark the two cells where Japan differs most.}
+\textbf{Japan is a different market}: role-playing games make 27.4\% of its units (7.5\%
+in North America), shooters only 3.0\% (13.5\%). North America, Europe and the rest of the
+world buy the same mix of Action, Sports and Shooter games.
+
+\subsection{Is there a relationship between ratings and sales? (Q7)}
+The analysis uses the 8{,}135 releases with a critic score (48.7\% of the releases but
+62.9\% of the units: reviewed games are the more visible ones).
+\fig{fig09_critic_score_sales}{Critic score and units sold: every release (left, log scale) and median per score band (right).}
+\textbf{Better-reviewed games sell more, and the effect accelerates at the top}: the
+median release sells 0.12 M units below a score of 50, 0.28 M at 70--79, 0.59 M at 80--89
+and \textbf{1.54 M at 90 or more}, thirteen times more than the lowest band. The cloud is
+wide, however: the score shifts the odds, it does not guarantee a hit.
+\fig{fig10_scores_esrb}{Rank correlations with sales (left) and median units by ESRB rating (right).}
+\textbf{The press matters more than the players}: $\rho = 0.39$ for the critic score,
+$0.15$ for the user score, although the two scores agree ($\rho = 0.54$). Critic reviews
+appear at launch, when most copies are sold; user scores accumulate later. Mature (M)
+games have the highest median (0.31 M), unrated releases the lowest (0.11 M).
+
+\subsection{A hit-driven market}
+\fig[0.86]{fig11_concentration}{Cumulative share of units, releases sorted from best to worst seller.}
+\textbf{6.6\% of the releases make half of all units} and one quarter makes 80\%, while
+35\% of the releases sell fewer than 100{,}000 copies.
+
+% =====================================================================
+\section{Statistical tests}
+
+Sales are very skewed, so the tests are rank-based. With thousands of releases even weak
+effects are significant; the size of the effect is what matters.
+
+\begin{table}[H]\centering\small
+\caption{Spearman correlations with global sales (95\% bootstrap intervals) and Kruskal-Wallis tests.}
+\begin{tabularx}{\linewidth}{@{}Xrrl@{}}
+\toprule
+Relationship & $n$ & Effect & Reading\\\midrule
+Critic score -- sales & 8{,}135 & $\rho = 0.39$ [0.37, 0.41] & moderate, strongest\\
+Critic score -- sales, controlling for the number of critics & 8{,}135 & partial $\rho = 0.26$ & survives the visibility effect\\
+Critic score -- sales within each genre & 12 genres & $\rho$ 0.13 to 0.50 & positive in all genres\\
+Number of critics -- sales & 8{,}135 & $\rho = 0.41$ & big games get more reviews\\
+User score -- sales & 7{,}588 & $\rho = 0.15$ [0.13, 0.17] & weak\\
+Year of release -- sales & 16{,}443 & $\rho = -0.16$ & recent releases sell slightly less each\\
+Sales by critic band (Kruskal-Wallis) & 8{,}135 & $\varepsilon^2 = 0.16$ & large\\
+Sales by genre / ESRB / manufacturer & & $\varepsilon^2$ 0.06 / 0.04 / 0.03 & small\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The critic score is the best single predictor of sales in this file, and the link holds
+once the number of critics (a proxy of visibility) is removed. These are associations,
+not causes: a large budget can produce both a better game and a larger marketing campaign.
+
+% =====================================================================
+\section{After 2016: the PS4 and Xbox One generation}
+
+\fig{fig12_current_generation}{Region shares (left) and sales of the same 620 PS4 and Xbox One games in December 2016 and in the later snapshot (right).}
+The console files are not merged with the main file (other snapshot, other genre names);
+they answer two questions. \textbf{In the current generation, Japan almost disappears}
+(4\% of PS4 and Xbox One units) and \textbf{Europe (39\%) catches up with North America
+(43\%)}; the leaders are Western blockbusters (GTA~V, Call of Duty, Red Dead Redemption~2,
+FIFA). \textbf{Games keep selling}: the 620 releases found in both files sold 453 M units
+by December 2016 and 585 M in the later snapshot, \textbf{+29\%} (median +22\% per game);
+GTA~V on PS4 went from 12.6 to 19.4 M. The 2015--2016 figures of the main file are
+therefore under-estimated, and the back catalogue has real value.
+
+% =====================================================================
+\section{The Power BI dashboard}\label{sec:dash}
+
+The dashboard is delivered as the template \nolinkurl{powerbi/Video_Game_Analytics_Dashboard.pbit}.
+On opening, Power BI asks for \texttt{DataFolder}, the folder \texttt{data/processed/}, and
+loads the four cleaned tables, so every number matches the notebook. The model has five
+tables (\texttt{Games}, \texttt{Regional Sales}, \texttt{PS4 XOne}, \texttt{PS4 XOne Regions},
+\texttt{Cleaning Log}), one relationship (\texttt{Regional Sales} $\to$ \texttt{Games} on
+\texttt{Game ID}) and 22 DAX measures. \emph{Top Genre}, \emph{Top Platform} and \emph{Top
+Publisher} are computed with \texttt{TOPN} and follow the filters.
+
+\begin{table}[H]\centering\small
+\caption{Pages of the dashboard.}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Page & Visuals\\\midrule
+1. Overview & KPI cards (Total Games, Total Releases, Total Sales, Top Genre, Top Platform, Top Publisher); sales trend; region donut; sales by genre, top 10 platforms and publishers; scrolling best sellers\\
+2. Genres \& Platforms & releases by genre; average and median units per release by genre; units per year by manufacturer; top 12 platforms\\
+3. Publishers \& Games & top 10 publishers; releases vs units per release by publisher; top 10 releases; top 10 games, all platforms\\
+4. Regions & region donut; region share by year; genre share inside each region; units by region\\
+5. Ratings \& Sales & score cards; median units by critic band; units at each critic score; critics vs players; ESRB rating\\
+6. PS4 \& Xbox One & cards of the console files; region donut; top 10 games; genres; units by year and console\\
+7. Insights & the insights and recommendations of Section~\ref{sec:ins}\\
+8. Data Quality & pipeline summary and cleaning log\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Design.} The report uses a \emph{Neon Arcade} theme made for the gaming audience:
+an illustrated night background with a synthwave grid, a header banner with the logo and a
+pill-shaped page navigator, KPI cards with icons, translucent rounded panels behind every
+visual and one neon colour per chart (cyan, magenta, violet, amber, lime). The palette is
+kept consistent: the four regions always have the same colours.
+
+\textbf{Interactivity.} Four slicers synchronised across the analysis pages (year range,
+genre, manufacturer, platform); cross-filtering between visuals (a click on a bar filters
+the page); Top~N filters that follow the slicers; the page navigator; tooltips on every
+visual. The build guide (\nolinkurl{powerbi/Dashboard_Build_Guide.md}) lists the values to
+check after opening; every capture below, taken with no filter, shows these values.
+
+\subsection{Overview}
+\capture{dashboard/p1_overview.png}{\label{fig:p1}Overview. The six KPI cards answer the brief at a glance:
+11{,}563 games, 16{,}715 releases, 8{,}917.9 million units, and the three leaders (Action, PlayStation~2,
+Nintendo). The area chart shows the rise to the 2008 peak and the decline; the donut gives the
+regional split (North America 49.4\%); the three bar charts rank genres, platforms and publishers;
+the ticker at the bottom scrolls the best-selling games (Wii Sports 82.5 M, GTA~V 56.6 M).}
+The Overview is the one-page summary required by the brief. Every card is a DAX measure that
+follows the slicers: selecting the genre \emph{Role-Playing}, for example, makes Nintendo DS the top
+platform, and selecting the manufacturer \emph{Nintendo} makes the Wii the top platform.
+
+\subsection{Genres and platforms (Q1, Q2, Q5)}
+\capture{dashboard/p2_genres_platforms.png}{\label{fig:p2}Genres \& Platforms. Left to right: the most
+common genres (Action 3.4~K releases), the average and the median units per release by genre (Platform
+first in both: 0.93~M and 0.27~M), the stacked units per year by manufacturer (Sony and Nintendo
+dominate the 2000s peak) and the twelve best-selling platforms (PS2 1{,}255.6~M).}
+Putting frequency next to the average and the median makes the key nuance of Q1 visible:
+Action is the most common genre, but Platform and Shooter games sell the most per release,
+and the medians are three to four times below the means.
+
+\subsection{Publishers and games (Q3, Q4)}
+\capture{dashboard/p3_publishers_games.png}{\label{fig:p3}Publishers \& Games. The top 10 publishers
+(Nintendo 1{,}788.8~M, EA 1{,}117.0~M); the scatter of releases against units per release separates the
+\emph{hit} model (Nintendo, top left: few releases, 2.5~M each) from the \emph{volume} model (Electronic
+Arts, right: 1{,}355 releases); the table of the best-selling releases and the top 10 games summed
+over platforms (GTA~V second with 56.6~M).}
+
+\subsection{Regions (Q6)}
+\capture{dashboard/p4_regions.png}{\label{fig:p4}Regions. Share of units by region (North America 49.37\%,
+Europe 27.2\%, Japan 14.56\%, Other 8.88\%); share of each year's units (Japan's weight collapses after
+1995, Europe grows to the first rank in 2016); genre share inside each region (Japan's role-playing
+peak and shooter gap) and units by region.}
+
+\subsection{Ratings and sales (Q7)}
+\capture{dashboard/p5_ratings_sales.png}{\label{fig:p5}Ratings \& Sales. Cards: 8{,}135 scored releases,
+average critic score 69.0, average user score 71.3 (x10), median 0.24~M units. The median per critic band
+rises from 0.12~M (below 50) to 1.54~M (90+); the average units at each score bend upwards above 80; critics
+and players agree only loosely (wide cloud around the trend line); by ESRB rating, Mature games lead
+among the large groups.}
+Two readings need care on this page. The \emph{No score} band (0.12~M) gathers the releases
+never reviewed by Metacritic, mostly older or smaller games. In the ESRB chart, \textbf{AO
+(1.95~M) is a single release} and \textbf{EC} has only eight: the meaningful comparison is between
+M (0.31~M), E10+, E and T (about 0.20~M) and \emph{Not rated} (0.11~M).
+
+\subsection{After 2016: PS4 and Xbox One}
+\capture{dashboard/p6_ps4_xbox_one.png}{\label{fig:p6}PS4 \& Xbox One (later VGChartz snapshot). Cards:
+1{,}135 releases with sales, 864.7~M units, 0.76~M per release, Japan 4.1\% of units. The donut shows
+North America 43.3\% and Europe 39.1\%; GTA~V leads with 28.1~M units on the two consoles; shooters lead
+the genres (227.2~M); the PS4 outsells the Xbox One every year.}
+
+\subsection{Insights and data quality}
+\capture{dashboard/p7_insights.png}{\label{fig:p7}Insights: the nine findings of the analysis and the
+recommendations, each tile with its key figures.}
+\capture{dashboard/p8_data_quality.png}{\label{fig:p8}Data Quality: the five steps from the raw files to
+the model, and the cleaning log loaded from \texttt{cleaning\_log.csv} (16{,}719 rows to 16{,}715 releases,
+99.97\% of units kept).}
+The last page makes the cleaning auditable inside the dashboard itself: a reader can see
+which rows were removed, merged or recoded, and on which base each visual is computed.
+
+% =====================================================================
+\section{Insights and recommendations}\label{sec:ins}
+
+\begin{enumerate}
+\item \textbf{Choose genres by return per release, not by popularity.} Platform, Shooter,
+Sports and Racing have the highest medians; crowded genres with low medians (Adventure,
+Strategy, Puzzle) need a clear differentiation or a small budget.
+\item \textbf{Invest in quality as judged by the press.} Median sales jump above a critic
+score of 80 (0.59 M) and 90 (1.54 M): polish, review-ready launches and press relations
+pay; user scores are a weaker signal.
+\item \textbf{Release on several platforms.} GTA~V and Call of Duty reach the top by adding
+platforms and generations; plan ports early for the leading platforms of the current
+generation.
+\item \textbf{Adapt the offer to each region.} Shooters and sports for North America and
+Europe; role-playing games, handheld and mobile formats for Japan; give Europe the same
+launch effort as North America.
+\item \textbf{Manage a portfolio of bets.} Half of the market is made by 6.6\% of releases:
+plan with medians and hit probabilities, fund a few potential blockbusters, keep small
+titles cheap.
+\item \textbf{Exploit the back catalogue}: established games still sell 29\% more within
+about two years (price cuts, bundles, remasters, ports).
+\item \textbf{Complete the data with digital sales} before deciding on the future of a genre
+or platform: retail units no longer describe the whole market.
+\end{enumerate}
+
+% =====================================================================
+\section{Limitations}
+\begin{itemize}
+\item Retail units only: no prices, revenue, digital, mobile or free-to-play sales.
+\item VGChartz figures are estimates and are revised; 2016 is incomplete.
+\item Scores exist for half of the releases, almost none before 1996.
+\item The correlations are associations, not causes.
+\end{itemize}
+
+\section{Reproducibility}
+
+Every number, table and figure of this report is produced by the notebook
+\nolinkurl{Video-Game-Analytics.ipynb} from the three files of \nolinkurl{data/raw/}. The
+notebook writes the cleaned dataset and the dashboard tables (\nolinkurl{data/processed/}),
+the result tables (\nolinkurl{results/}) and the figures (\nolinkurl{figures/}). The template
+\nolinkurl{powerbi/Video_Game_Analytics_Dashboard.pbit} loads \nolinkurl{data/processed/}.
+The project is published at \url{https://github.com/koffifidelek59-collab/video-game-analytics}.
+
+\section*{References}
+{\small\begin{enumerate}[itemsep=0pt]
+\item Kirubi, R. (2016). \emph{Video Game Sales with Ratings}, Kaggle (VGChartz sales, Metacritic scores, extraction of 22 December 2016). \url{https://www.kaggle.com/datasets/rush4ratio/video-game-sales-with-ratings}
+\item VGChartz. Game sales database (PS4 and Xbox One files). \url{https://www.vgchartz.com}
+\item Metacritic. Critic and user scores. \url{https://www.metacritic.com}
+\item Entertainment Software Rating Board. Ratings guide. \url{https://www.esrb.org/ratings-guide/}
+\item Gebru, T. et al. (2021). Datasheets for Datasets. \emph{Communications of the ACM}, 64(12), 86--92.
+\item Microsoft. Power BI documentation. \url{https://learn.microsoft.com/power-bi/}
+\end{enumerate}}
+
+\enlargethispage{4\baselineskip}
+\vspace{0.1cm}
+\noindent\hfill\begin{minipage}{7cm}\begin{flushright}\singlespacing
+\textbf{KOUAME Koffi Fid\`ele}\\
+Data Analysis Internship\\
+\href{mailto:koffifidelek59@gmail.com}{koffifidelek59@gmail.com}
+\end{flushright}\end{minipage}
+
+\end{document}
