@@ -1,0 +1,75 @@
+// DAX measures of Video_Game_Analytics_Dashboard.pbit
+
+// ---- table Games
+Total Games =
+    DISTINCTCOUNT ( Games[Name] )
+    -- format: #,0
+Total Releases =
+    COUNTROWS ( Games )
+    -- format: #,0
+Total Sales (M) =
+    SUM ( Games[Global Sales] )
+    -- format: #,0.0" M"
+Avg Sales per Release (M) =
+    AVERAGE ( Games[Global Sales] )
+    -- format: 0.00" M"
+Median Sales per Release (M) =
+    MEDIAN ( Games[Global Sales] )
+    -- format: 0.00" M"
+Hit Rate (1M+) =
+    DIVIDE ( CALCULATE ( COUNTROWS ( Games ), Games[Global Sales] >= 1 ), COUNTROWS ( Games ) )
+    -- format: 0.0%
+Top Genre =
+    VAR t = TOPN ( 1, VALUES ( Games[Genre] ), [Total Sales (M)] ) RETURN CONCATENATEX ( t, Games[Genre], ", " )
+    -- format: text
+Top Platform =
+    VAR t = TOPN ( 1, VALUES ( Games[Platform Name] ), [Total Sales (M)] ) RETURN CONCATENATEX ( t, Games[Platform Name], ", " )
+    -- format: text
+Top Publisher =
+    VAR t = TOPN ( 1, VALUES ( Games[Publisher] ), [Total Sales (M)] ) RETURN CONCATENATEX ( t, Games[Publisher], ", " )
+    -- format: text
+Avg Critic Score =
+    AVERAGE ( Games[Critic Score] )
+    -- format: 0.0
+Avg User Score (x10) =
+    AVERAGE ( Games[User Score x10] )
+    -- format: 0.0
+Scored Releases =
+    COUNT ( Games[Critic Score] )
+    -- format: #,0
+Median Sales by Score (M) =
+    CALCULATE ( MEDIAN ( Games[Global Sales] ), NOT ISBLANK ( Games[Critic Score] ) )
+    -- format: 0.00" M"
+Avg Sales 20+ Releases (M) =
+    IF ( [Total Releases] >= 20, [Avg Sales per Release (M)] )
+    -- format: 0.00" M"
+
+// ---- table Regional Sales
+Regional Sales (M) =
+    SUM ( 'Regional Sales'[Sales] )
+    -- format: #,0.0" M"
+Region Share =
+    DIVIDE ( [Regional Sales (M)], CALCULATE ( [Regional Sales (M)], ALLSELECTED ( 'Regional Sales'[Region] ) ) )
+    -- format: 0.0%
+Genre Share in Region =
+    DIVIDE ( [Regional Sales (M)], CALCULATE ( [Regional Sales (M)], ALLSELECTED ( Games[Genre] ) ) )
+    -- format: 0.0%
+
+// ---- table PS4 XOne
+PS4 XOne Sales (M) =
+    SUM ( 'PS4 XOne'[Global] )
+    -- format: #,0.0" M"
+PS4 XOne Releases =
+    COUNTROWS ( 'PS4 XOne' )
+    -- format: #,0
+PS4 XOne Avg Sales (M) =
+    AVERAGE ( 'PS4 XOne'[Global] )
+    -- format: 0.00" M"
+PS4 XOne Japan Share =
+    DIVIDE ( SUM ( 'PS4 XOne'[JP] ), SUM ( 'PS4 XOne'[Global] ) )
+    -- format: 0.0%
+
+// ---- table PS4 XOne Regions
+PS4 XOne Regional Sales (M) =
+    SUM ( 'PS4 XOne Regions'[Sales] )
+    -- format: #,0.0" M"
