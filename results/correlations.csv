@@ -1,0 +1,5 @@
+,rho,CI low,CI high,p-value,n
+Critic score,0.3945,0.3754,0.415,0.0,8135
+User score,0.1499,0.1281,0.1714,0.0,7588
+Critic count,0.4086,0.39,0.4276,0.0,8135
+Year of release,-0.1607,-0.176,-0.1453,0.0,16443
