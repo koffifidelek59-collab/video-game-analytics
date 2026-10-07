@@ -1,0 +1,11 @@
+Step,Name,Action,Rows Affected,Rows After,Units After (M)
+1,Raw file,Video_Games_Sales_as_at_22_Dec_2016.csv as supplied,0,16719,8920.3
+2,Nameless rows,"2 rows without name and genre removed (GEN, 1993)",2,16717,8917.88
+3,Fragments,Madden NFL 13 (PS3) and Sonic the Hedgehog (PS3): fragment sales added to the release,2,16715,8917.88
+4,Homonyms,2012 reboot of Need for Speed: Most Wanted renamed (distinct from the 2005 game),4,16715,8917.88
+5,Impossible years,"Years after the extraction date (2017, 2020) set to missing",4,16715,8917.88
+6,Missing publisher,Missing publisher written Unknown (like 201 rows already),53,16715,8917.88
+7,ESRB codes,K-A recoded E (pre-1998 name); RP and missing written Not rated,6773,16715,8917.88
+8,Types,"Year, critic count and user count converted to integers",0,16715,8917.88
+9,Derived columns,"Platform name, manufacturer and type; decade; user score x10; critic band; sales tier",0,16715,8917.88
+10,Console files,"PS4 and Xbox One files decoded (Mac Roman), trimmed, 512 zero-sales rows removed",512,1135,864.67
